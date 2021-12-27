@@ -1,6 +1,7 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname brain-starters) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+
 (require 2htdp/universe)
 (require 2htdp/image)
 (require 2htdp/batch-io)
@@ -17,6 +18,9 @@
 (define BG-2 (place-image SUB-HEADER 200 60 BG-1))
 (define BG-3 (place-image ENGLISH 95 120 BG-2))
 (define BG-FINAL (place-image MATH 305 120 BG-3))
+(define DICT-FILE "words.txt")
+(define DICT? (file-exists? DICT-FILE))
+(define DICT (if DICT? (read-lines DICT-FILE) null))
 
 
 
@@ -72,15 +76,6 @@
       ... game ...])))
 
 
-; dictionary-word? : String -> Boolean
-; Checks if the word is a dictionary word
-
-; no check-expect in case the user does not have "words.txt"
-; the code works though I promise ;)
-
-(define (dictionary-word? s)
-  (ormap (λ (word) (string=? s word)) (read-lines "words.txt")))
-
 ; valid-structure? : English -> Boolean
 ; Determines if the entry meets the criteria of having the first and last letter
 
@@ -90,8 +85,8 @@
 (define (valid-structure? e)
   (and
    (not (string=? "" (english-input e)))
-   (string=? (english-s1 e) (first (explode (string-downcase (english-input e)))))
-   (string=? (english-s2 e) (first (reverse (explode (string-downcase (english-input e))))))))
+   (string=? (english-s1 e) (substring (string-downcase (english-input e)) 0 1))
+   (string=? (english-s2 e) (substring (string-downcase (english-input e)) (sub1 (string-length (english-input e)))))))
 
 
 ; does-it-work? 1String 1String -> Boolean
@@ -106,10 +101,10 @@ Tests are commented out in case the user does not have "words.txt"
 (define (does-it-work? s1 s2)
   (> (length (filter (λ (word) (and (string=? s1 (first (explode word)))
                                     (string=? s2 (first (reverse (explode word))))))
-                     (read-lines "words.txt")))
+                     DICT))
      20))
 
-; random-first-letter : Number -> 1String
+; random-letter : Number -> 1String
 ; Picks a random letter based on a numerical input, which
 ; is supposed to be random.
 
@@ -118,7 +113,7 @@ Tests are commented out in case the user does not have "words.txt"
 
 (define (random-letter n)
   (substring (substring "abcdefghijklmnopqrstuvwxyz" 0 n)
-             (- (string-length (substring "abcdefghijklmnopqrstuvwxyz" 0 n)) 1)))
+             (sub1 (string-length (substring "abcdefghijklmnopqrstuvwxyz" 0 n)))))
 
 
 
@@ -152,7 +147,7 @@ Tests are commented out in case the user does not have "words.txt"
               (substring (english-input e) 0 (- (string-length (english-input e)) 1))
               "") e)]
         [(string=? ke "\r")
-         (if (and (dictionary-word? (string-downcase (english-input e))) (valid-structure? e))
+         (if (and (member? (string-downcase (english-input e)) DICT) (valid-structure? e))
              (make-new-english "Correct!")
              (make-english
               (english-s1 e)
@@ -363,6 +358,7 @@ Tests are commented out in case the user does not have "words.txt"
     [else g]))
 
 ; global-draw : Game -> Image
+; Draws the game based on the current status of the game
 
 (check-expect (global-draw MATH-EX-1) (math->image MATH-EX-1))
 
@@ -381,5 +377,6 @@ Tests are commented out in case the user does not have "words.txt"
       game
     (to-draw global-draw)
     (on-key global-key-pressed)))
+
 
 (play 0)
